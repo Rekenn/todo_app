@@ -1,5 +1,5 @@
 from app import db
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 
 
 groups = db.Table('groups',
@@ -22,7 +22,7 @@ class User(db.Model):
 
     def __init__(self, username, password):
         self.username = username
-        self.password = generate_password_hash(password)
+        self.password = password
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -31,6 +31,7 @@ class User(db.Model):
 class Group(db.Model):
     __tablename__ = 'group'
     id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String(32), nullable=False)
     tasks = db.relationship('Task', secondary=tasks)
 
 
