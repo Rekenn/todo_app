@@ -1,6 +1,6 @@
 from app.models import User, Task, Group
 from app import ma
-from marshmallow import fields, validate, post_load
+from marshmallow import fields, validate
 
 
 class UserSchema(ma.ModelSchema):

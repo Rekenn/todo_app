@@ -15,7 +15,23 @@ migrate = Migrate(app, db)
 ma = Marshmallow(app)
 jwt = JWTManager(app)
 
-from app.resources import Login, List
+@jwt.token_in_blacklist_loader
+def check_if_token_in_blacklist(decrypted_token):
+    jti = decrypted_token['jti']
+    return models.RevokedToken.is_jti_blacklisted(jti)
 
+from app.resources import \
+    Register, \
+    Login, \
+    TokenRefresh, \
+    LogoutAccess, \
+    LogoutRefresh, \
+    List
+
+
+api.add_resource(Register, '/api/register')
 api.add_resource(Login, '/api/login')
+api.add_resource(TokenRefresh, '/api/token')
+api.add_resource(LogoutAccess, '/api/logout/access')
+api.add_resource(LogoutRefresh, '/api/logout/refresh')
 api.add_resource(List, '/api/list')

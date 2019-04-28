@@ -40,3 +40,14 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     text = db.Column(db.String(64), nullable=False)
     active = db.Column(db.Boolean, default=True)
+
+
+class RevokedToken(db.Model):
+    __tablename__ = 'revoked_token'
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    # jti - unique token identifer
+    jti = db.Column(db.String(120), nullable=False, index=True)
+
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        return cls.query.filter_by(jti=jti).first()

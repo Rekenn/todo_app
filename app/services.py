@@ -1,5 +1,9 @@
-from app.models import User
+from app import db
 
 
-def find_user_by_username(username):
-    return User.query.filter_by(username=username).first()
+def add_to_db(obj):
+    try:
+        db.add(obj)
+        db.commit()
+    except Exception as err:
+        print(err)
