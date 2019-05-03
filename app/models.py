@@ -17,7 +17,7 @@ class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, unique=True)
     username = db.Column(db.String(32), nullable=False, unique=True)
-    password = db.Column(db.String(256), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
     groups = db.relationship('Group', secondary=groups)
 
     def __init__(self, username, password):
@@ -25,7 +25,7 @@ class User(db.Model):
         self.password = password
 
     def __repr__(self):
-        return '<User {}>'.format(self.username)
+        return f'<User {self.username}>'
 
 
 class Group(db.Model):
@@ -33,6 +33,9 @@ class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     name = db.Column(db.String(32), nullable=False)
     tasks = db.relationship('Task', secondary=tasks)
+
+    def __init__(self, name):
+        self.name = name
 
 
 class Task(db.Model):

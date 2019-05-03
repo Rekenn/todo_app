@@ -2,7 +2,6 @@ from flask import Flask
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager
 from config import Config
 
@@ -12,7 +11,6 @@ app.config.from_object(Config)
 api = Api(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-ma = Marshmallow(app)
 jwt = JWTManager(app)
 
 @jwt.token_in_blacklist_loader
@@ -34,4 +32,4 @@ api.add_resource(Login, '/api/login')
 api.add_resource(TokenRefresh, '/api/token')
 api.add_resource(LogoutAccess, '/api/logout/access')
 api.add_resource(LogoutRefresh, '/api/logout/refresh')
-api.add_resource(List, '/api/list')
+api.add_resource(List, '/api/lists')

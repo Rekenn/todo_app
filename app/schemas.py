@@ -1,28 +1,50 @@
-from app.models import User, Task, Group
-from app import ma
-from marshmallow import fields, validate
+register_schema = {
+    'type': 'object',
+    'properties': {
+        'username': {
+            'type': 'string',
+            'minLength': 4,
+            'maxLength': 32
+        },
+        'password': {
+            'type': 'string',
+            'minLength': 6,
+            'maxLength': 64
+        },
+        'password2': {
+            'type': 'string',
+            'minLength': 6,
+            'maxLength': 64
+        }
+    },
+    'required': ['username', 'password', 'password2']
+}
 
+login_schema = {
+    'type': 'object',
+    'properties': {
+        'username': {
+            'type': 'string',
+            'minLength': 4,
+            'maxLength': 32
+        },
+        'password': {
+            'type': 'string',
+            'minLength': 6,
+            'maxLength': 64
+        }
+    },
+    'required': ['username', 'password']  
+}
 
-class UserSchema(ma.ModelSchema):
-    username = fields.Str(validate=validate.Length(min=4, max=32), required=True)
-    password = fields.Str(validate=validate.Length(min=6, max=32), required=True)
-
-    class Meta:
-        model = User
-        strict = True
-
-
-class GroupSchema(ma.ModelSchema):
-    name = fields.Str(validate.Length(min=2, max=32), required=True)
-
-    class Meta:
-        model = Group
-        strict = True
-
-
-class TaskSchema(ma.ModelSchema):
-    text = fields.Str(validate=validate.Length(min=2, max=64), required=True)
-
-    class Meta:
-        model = Task
-        strict = True
+list_schema = {
+    'type': 'object',
+    'properties': {
+        'groupname': {
+            'type': 'string',
+            'minLength': 2,
+            'maxLength': 32
+        }
+    },
+    'required': ['groupname']
+}
