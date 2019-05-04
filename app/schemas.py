@@ -37,14 +37,39 @@ login_schema = {
     'required': ['username', 'password']  
 }
 
-list_schema = {
+new_list_schema = {
     'type': 'object',
     'properties': {
-        'groupname': {
+        'listname': {
             'type': 'string',
             'minLength': 2,
             'maxLength': 32
         }
     },
-    'required': ['groupname']
+    'required': ['listname']
+}
+
+update_list_schema = {
+    'type': 'object',
+    'properties': {
+        'id': {
+            'type': 'integer'
+        },
+        'listname': {
+            'type': 'string',
+            'minLength': 2,
+            'maxLength': 32
+        }
+    },
+    'required': ['id', 'listname']
+}
+
+delete_list_schema = {
+    'type': 'object',
+    'properties': {
+        'id': {
+            'type': 'integer'
+        }
+    },
+    'required': ['id']
 }

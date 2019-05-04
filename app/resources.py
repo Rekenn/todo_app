@@ -2,9 +2,9 @@ from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, create_refresh_token, \
     jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt
-from app.schemas import login_schema, register_schema, list_schema
+from app.schemas import login_schema, register_schema, new_list_schema, delete_list_schema, update_list_schema
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import User, Group, RevokedToken
+from app.models import User, TodoList, RevokedToken
 from jsonschema import validate
 from app import db
 
@@ -91,7 +91,9 @@ class LogoutAccess(Resource):
         try:
             jti = get_raw_jwt()['jti']
             revoked_token = RevokedToken(jti=jti)
-            add_to_db(revoked_token)
+            db.session.add(revoked_token)
+            db.session.commit()
+
             return {
                 'message': 'Revoked access token',
                 'code': 200
@@ -110,7 +112,9 @@ class LogoutRefresh(Resource):
         try:
             jti = get_raw_jwt()['jti']
             revoked_token = RevokedToken(jti=jti)
-            add_to_db(revoked_token)
+            db.session.add(revoked_token)
+            db.session.commit()
+
             return {
                 'message': 'Revoked access token',
                 'code': 200
@@ -128,9 +132,10 @@ class List(Resource):
     def get(self):
         try:
             username = get_jwt_identity()
-            user_groups = User.query.filter_by(username=username).first().groups
+            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
+
             return {
-                'groups': user_groups,
+                'todo_lists': {todo_list.id: todo_list.name for todo_list in user_todo_lists},
                 'code': 200
             }
         except Exception as err:
@@ -144,20 +149,67 @@ class List(Resource):
     def post(self):
         try:
             new_list_request = request.get_json()
-            validate(schema=list_schema, instance=new_list_request)
+            validate(schema=new_list_schema, instance=new_list_request)
             username = get_jwt_identity()
             
+            new_todo_list = TodoList(name=new_list_request['listname'])
+
             existing_user = User.query.filter_by(username=username).first()
-            new_group = Group(name=new_list_request['groupname'])
-            existing_user.groups.append(new_group)
+            existing_user.todo_lists.append(new_todo_list)
+
+            db.session.add(new_todo_list)
+            db.session.commit()
+
+            return {
+                'message': 'Added new todo list',
+                'code': 200
+            }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
+    
+
+    @jwt_required
+    def put(self):
+        try:
+            update_list_request = request.get_json()
+            validate(schema=update_list_schema, instance=update_list_request)
+
+            todo_list = TodoList.query.get(update_list_request['id'])
+            todo_list.name = update_list_request['listname']
 
             db.session.commit()
 
             return {
-                'message': 'Add new group',
+                'message': 'Updated todo list name',
                 'code': 200
             }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
 
+    @jwt_required
+    def delete(self):
+        try:
+            delete_list_request = request.get_json()
+            validate(schema=delete_list_schema, instance=delete_list_request)
+            username = get_jwt_identity()
+
+            todo_list = TodoList.query.get(delete_list_request['id'])
+
+            db.session.delete(todo_list)
+            db.session.commit()
+
+            return {
+                'message': 'Deleted todo list',
+                'code': 200
+            }
         except Exception as err:
             print(err)
             return {
