@@ -24,7 +24,9 @@ from app.resources import \
     TokenRefresh, \
     LogoutAccess, \
     LogoutRefresh, \
-    List
+    TodoLists, \
+    Tasks, \
+    SingleTask
 
 
 api.add_resource(Register, '/api/register')
@@ -32,4 +34,6 @@ api.add_resource(Login, '/api/login')
 api.add_resource(TokenRefresh, '/api/token')
 api.add_resource(LogoutAccess, '/api/logout/access')
 api.add_resource(LogoutRefresh, '/api/logout/refresh')
-api.add_resource(List, '/api/lists')
+api.add_resource(TodoLists, '/api/lists')
+api.add_resource(Tasks, '/api/lists/<int:list_id>/tasks')
+api.add_resource(SingleTask, '/api/lists/<int:list_id>/tasks/<int:task_id>')

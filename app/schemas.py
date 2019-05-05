@@ -34,7 +34,7 @@ login_schema = {
             'maxLength': 64
         }
     },
-    'required': ['username', 'password']  
+    'required': ['username', 'password']
 }
 
 new_list_schema = {
@@ -65,6 +65,42 @@ update_list_schema = {
 }
 
 delete_list_schema = {
+    'type': 'object',
+    'properties': {
+        'id': {
+            'type': 'integer'
+        }
+    },
+    'required': ['id']
+}
+
+new_task_schema = {
+    'type': 'object',
+    'properties': {
+        'text': {
+            'type': 'string',
+            'minLength': 1,
+            'maxLength': 64
+        }
+    },
+    'required': ['text']
+}
+
+update_task_schema = {
+    'type': 'object',
+    'properties': {
+        'text': {
+            'type': 'string',
+            'minLength': 1,
+            'maxLength': 64
+        },
+        'active': {
+            'type': 'boolean'
+        }
+    }
+}
+
+delete_task_schema = {
     'type': 'object',
     'properties': {
         'id': {

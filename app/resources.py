@@ -2,9 +2,9 @@ from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, create_refresh_token, \
     jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt
-from app.schemas import login_schema, register_schema, new_list_schema, delete_list_schema, update_list_schema
+from app.schemas import login_schema, register_schema, new_list_schema, delete_list_schema, update_list_schema, new_task_schema, update_task_schema, delete_task_schema
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import User, TodoList, RevokedToken
+from app.models import User, TodoList, Task, RevokedToken
 from jsonschema import validate
 from app import db
 
@@ -52,7 +52,10 @@ class Login(Resource):
         try:
             login_request = request.get_json()
             validate(instance=login_request, schema=login_schema)
-            user = User(**login_request)
+            user = User(
+                username=login_request['username'],
+                password=login_request['password']
+            )
             existing_user = User.query.filter_by(username=user.username).first()
 
             if not existing_user:
@@ -127,7 +130,7 @@ class LogoutRefresh(Resource):
             }
 
 
-class List(Resource):
+class TodoLists(Resource):
     @jwt_required
     def get(self):
         try:
@@ -171,7 +174,6 @@ class List(Resource):
                 'code': 500
             }
     
-
     @jwt_required
     def put(self):
         try:
@@ -216,6 +218,143 @@ class List(Resource):
                 'message': 'Internal server error',
                 'code': 500
             }
+
+
+class Tasks(Resource):
+    @jwt_required
+    def get(self, list_id):
+        try:
+            username = get_jwt_identity()
+            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
+
+            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
+            if not list_id in user_todo_list_ids:
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+
+            todo_list = TodoList.query.get(list_id)
+            return {
+                'tasks': [
+                    {
+                        'id': task.id,
+                        'text': task.text,
+                        'active': task.active
+                    }
+                    for task in todo_list.tasks
+                ],
+                'code': 200
+            }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
+    
+    @jwt_required
+    def post(self, list_id):
+        try:
+            new_task_request = request.get_json()
+            validate(schema=new_task_schema, instance=new_task_request)        
+            username = get_jwt_identity()
+
+            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
+
+            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
+            if not list_id in user_todo_list_ids:
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+
+            todo_list = TodoList.query.get(list_id)
+            new_task = Task(text=new_task_request['text'])
+            todo_list.tasks.append(new_task)
+
+            db.session.add(new_task)
+            db.session.commit()
+
+            return {
+                'message': 'Added new task',
+                'code': 200
+            }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
+
+
+class SingleTask(Resource):
+    @jwt_required
+    def put(self, list_id, task_id):
+        try:
+            update_task_request = request.get_json()
+            validate(schema=update_task_schema, instance=update_task_request)
+            username = get_jwt_identity()
+
+            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
+
+            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
+            if not list_id in user_todo_list_ids:
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+
+            task = Task.query.get(task_id)
+            task.text = update_task_request['text']
+            task.active = update_task_request['active']
+
+            db.session.commit()
+
+            return {
+                'message': 'Task updated',
+                'code': 200
+            }
+
+
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
+
+    @jwt_required
+    def delete(self, list_id, task_id):
+        try:
+            delete_task_request = request.get_json()
+            validate(schema=delete_task_schema, instance=delete_task_request)
+            username = get_jwt_identity()
+
+            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
+
+            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
+            if not list_id in user_todo_list_ids:
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+
+            task = Task.query.get(task_id)
+
+            db.session.delete(task)
+            db.session.commit()
+
+            return {
+                'message': 'Deleted task',
+                'code': 200
+            }        
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }  
 
 
 class TokenRefresh(Resource):

@@ -43,6 +43,10 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     text = db.Column(db.String(64), nullable=False)
     active = db.Column(db.Boolean, default=True)
+    todo_lists = db.relationship('TodoList', secondary=tasks)
+
+    def __init__(self, text):
+        self.text = text
 
 
 class RevokedToken(db.Model):
