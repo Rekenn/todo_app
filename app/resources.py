@@ -2,7 +2,7 @@ from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, create_refresh_token, \
     jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt
-from app.schemas import login_schema, register_schema, new_list_schema, delete_list_schema, update_list_schema, new_task_schema, update_task_schema, delete_task_schema
+from app.schemas import login_schema, register_schema, new_list_schema, update_list_schema, new_task_schema, update_task_schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import User, TodoList, Task, RevokedToken
 from jsonschema import validate
@@ -173,14 +173,23 @@ class TodoLists(Resource):
                 'message': 'Internal server error',
                 'code': 500
             }
-    
+
+
+class SingleTodoList(Resource):
     @jwt_required
-    def put(self):
+    def put(self, list_id):
         try:
             update_list_request = request.get_json()
             validate(schema=update_list_schema, instance=update_list_request)
+            username = get_jwt_identity()
 
-            todo_list = TodoList.query.get(update_list_request['id'])
+            if not User.contains_todo_list(username, list_id):
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+            
+            todo_list = TodoList.query.get(list_id)
             todo_list.name = update_list_request['listname']
 
             db.session.commit()
@@ -197,15 +206,23 @@ class TodoLists(Resource):
             }
 
     @jwt_required
-    def delete(self):
+    def delete(self, list_id):
         try:
-            delete_list_request = request.get_json()
-            validate(schema=delete_list_schema, instance=delete_list_request)
             username = get_jwt_identity()
 
-            todo_list = TodoList.query.get(delete_list_request['id'])
+            if not User.contains_todo_list(username, list_id):
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+            
+            todo_list = TodoList.query.get(list_id)
 
-            db.session.delete(todo_list)
+            if todo_list.users:
+                todo_list.users.remove(User.query.filter_by(username=username).first())
+            else:
+                db.session.delete(todo_list)
+
             db.session.commit()
 
             return {
@@ -217,22 +234,19 @@ class TodoLists(Resource):
             return {
                 'message': 'Internal server error',
                 'code': 500
-            }
-
+            }    
 
 class Tasks(Resource):
     @jwt_required
     def get(self, list_id):
         try:
             username = get_jwt_identity()
-            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
-
-            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
-            if not list_id in user_todo_list_ids:
+            
+            if not User.contains_todo_list(username, list_id):
                 return {
                     'message': 'List not found',
                     'code': 404
-                }
+                }            
 
             todo_list = TodoList.query.get(list_id)
             return {
@@ -260,10 +274,7 @@ class Tasks(Resource):
             validate(schema=new_task_schema, instance=new_task_request)        
             username = get_jwt_identity()
 
-            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
-
-            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
-            if not list_id in user_todo_list_ids:
+            if not User.contains_todo_list(username, list_id):
                 return {
                     'message': 'List not found',
                     'code': 404
@@ -296,10 +307,7 @@ class SingleTask(Resource):
             validate(schema=update_task_schema, instance=update_task_request)
             username = get_jwt_identity()
 
-            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
-
-            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
-            if not list_id in user_todo_list_ids:
+            if not User.contains_todo_list(username, list_id):
                 return {
                     'message': 'List not found',
                     'code': 404
@@ -327,14 +335,9 @@ class SingleTask(Resource):
     @jwt_required
     def delete(self, list_id, task_id):
         try:
-            delete_task_request = request.get_json()
-            validate(schema=delete_task_schema, instance=delete_task_request)
             username = get_jwt_identity()
 
-            user_todo_lists = User.query.filter_by(username=username).first().todo_lists
-
-            user_todo_list_ids = (user_todo_list.id for user_todo_list in user_todo_lists)
-            if not list_id in user_todo_list_ids:
+            if not User.contains_todo_list(username, list_id):
                 return {
                     'message': 'List not found',
                     'code': 404
@@ -355,6 +358,14 @@ class SingleTask(Resource):
                 'message': 'Internal server error',
                 'code': 500
             }  
+
+
+class InviteUser(Resource):
+    pass
+
+
+class SearchUser(Resource):
+    pass
 
 
 class TokenRefresh(Resource):

@@ -52,27 +52,15 @@ new_list_schema = {
 update_list_schema = {
     'type': 'object',
     'properties': {
-        'id': {
-            'type': 'integer'
-        },
         'listname': {
             'type': 'string',
             'minLength': 2,
             'maxLength': 32
         }
     },
-    'required': ['id', 'listname']
+    'required': ['listname']
 }
 
-delete_list_schema = {
-    'type': 'object',
-    'properties': {
-        'id': {
-            'type': 'integer'
-        }
-    },
-    'required': ['id']
-}
 
 new_task_schema = {
     'type': 'object',
@@ -98,14 +86,4 @@ update_task_schema = {
             'type': 'boolean'
         }
     }
-}
-
-delete_task_schema = {
-    'type': 'object',
-    'properties': {
-        'id': {
-            'type': 'integer'
-        }
-    },
-    'required': ['id']
 }

@@ -26,6 +26,14 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+    @staticmethod
+    def contains_todo_list(username, list_id):
+        todo_lists = User.query.filter_by(username=username).first().todo_lists
+        for todo_list in todo_lists:
+            if todo_list.id == list_id:
+                return True
+        return False
+
 
 class TodoList(db.Model):
     __tablename__ = 'todo_list'
