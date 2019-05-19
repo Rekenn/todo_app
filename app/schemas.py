@@ -87,3 +87,14 @@ update_task_schema = {
         }
     }
 }
+
+search_user_schema = {
+    'type': 'object',
+    'properties': {
+        'username': {
+            'type': 'string',
+            'minLength': 1,
+            'maxLength': 32
+        }
+    }
+}

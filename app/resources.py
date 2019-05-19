@@ -2,7 +2,7 @@ from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, create_refresh_token, \
     jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt
-from app.schemas import login_schema, register_schema, new_list_schema, update_list_schema, new_task_schema, update_task_schema
+from app.schemas import login_schema, register_schema, new_list_schema, update_list_schema, new_task_schema, update_task_schema, search_user_schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import User, TodoList, Task, RevokedToken
 from jsonschema import validate
@@ -361,11 +361,80 @@ class SingleTask(Resource):
 
 
 class InviteUser(Resource):
-    pass
+    @jwt_required
+    def post(self, list_id, user_id):
+        try:
+            username = get_jwt_identity()
+
+            if not User.contains_todo_list(username, list_id):
+                return {
+                    'message': 'List not found',
+                    'code': 404
+                }
+
+            invited_user = User.query.get(user_id)
+
+            if not invited_user:
+                return {
+                    'message': 'User not found',
+                    'code': 404
+                }
+
+            todo_list = TodoList.query.get(list_id)
+
+            if invited_user not in todo_list.users:
+                todo_list.users.append(invited_user)
+                db.session.commit()
+                return {
+                    'message': 'User invited',
+                    'code': 200
+                }
+
+            return {
+                'message': 'User already in todo list',
+                'code': 409
+            }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }             
+
 
 
 class SearchUser(Resource):
-    pass
+    @jwt_required
+    def post(self):
+        try:
+            search_user_request = request.get_json()
+            validate(schema=search_user_schema, instance=search_user_request)
+
+            expression = search_user_request['username']
+            found_users = User.query.filter(User.username.like(f'%{expression}%')).limit(10).all()
+
+            if not found_users:
+                return {
+                    'message': 'User not found',
+                    'code': 404
+                }
+
+            return {
+                'users': [
+                    {
+                        'id': user.id,
+                        'username': user.username
+                    }
+                    for user in found_users
+                ],
+                'code': 200
+            }
+        except Exception as err:
+            print(err)
+            return {
+                'message': 'Internal server error',
+                'code': 500
+            }
 
 
 class TokenRefresh(Resource):
