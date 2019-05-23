@@ -2,4 +2,3 @@ __pycache__
 venv
 set_env.sh
 api_requests
-migrations
