@@ -24,6 +24,7 @@ mysql-connector-python==8.0.15
 mysqlclient==1.4.2.post1
 pluggy==0.11.0
 protobuf==3.7.1
+psycopg2==2.8.2
 py==1.8.0
 PyJWT==1.7.1
 PyMySQL==0.9.3
