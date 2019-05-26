@@ -1,19 +1,26 @@
-def test_home_page(test_client):
-    """
-    GIVEN a Flask application
-    WHEN the '/' page is requested (GET)
-    THEN check the response is valid
-    """
-    response = test_client.get('/api/lists')
-    assert response.status_code == 500
+import json
 
 
-def test_login(test_client):
+def test_login(test_client, init_database):
     response = test_client.post(
         '/api/login',
-        data=dict(
-            username='faker',
-            password='default'
-        )
+        data=json.dumps(dict(
+            username='testuser',
+            password='foobar'
+        )),
+        content_type='application/json'
     )
-    assert response.data == 200
+    json_data = response.get_json()
+    assert json_data == {
+        'message': 'Log in properly',
+        'access_token': f"{json_data['access_token']}",
+        'refresh_token': f"{json_data['refresh_token']}",
+        'code': 200
+    }
+
+def test_get_lists(test_client, init_database, access_token):
+    response = test_client.get(
+        '/api/lists',
+        headers={'Authorization': f'Bearer {access_token}'}
+        )
+    assert response.status_code == 200
