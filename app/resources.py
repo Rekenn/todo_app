@@ -2,11 +2,12 @@ from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, create_refresh_token, \
     jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt
-from app.schemas import login_schema, register_schema, new_list_schema, update_list_schema, new_task_schema, update_task_schema, search_user_schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import User, TodoList, Task, RevokedToken
 from jsonschema import validate
 from app import db
+from app.schemas import login_schema, register_schema, new_list_schema, \
+    update_list_schema, new_task_schema, update_task_schema, search_user_schema
 
 
 class Register(Resource):
@@ -47,6 +48,7 @@ class Register(Resource):
                 'code': 500
             }
 
+
 class Login(Resource):
     def post(self):
         try:
@@ -63,9 +65,9 @@ class Login(Resource):
                     'message': 'User does not exists',
                     'code': 404
                 }
-            
+
             password_does_match = check_password_hash(existing_user.password, user.password)
-            
+
             if user.username == existing_user.username and password_does_match:
                 access_token = create_access_token(identity=user.username)
                 refresh_token = create_refresh_token(identity=user.username)
@@ -147,14 +149,13 @@ class TodoLists(Resource):
                 'code': 500
             }
 
-
     @jwt_required
     def post(self):
         try:
             new_list_request = request.get_json()
             validate(schema=new_list_schema, instance=new_list_request)
             username = get_jwt_identity()
-            
+
             new_todo_list = TodoList(name=new_list_request['listname'])
 
             existing_user = User.query.filter_by(username=username).first()
@@ -188,7 +189,7 @@ class SingleTodoList(Resource):
                     'message': 'List not found',
                     'code': 404
                 }
-            
+
             todo_list = TodoList.query.get(list_id)
             todo_list.name = update_list_request['listname']
 
@@ -215,7 +216,7 @@ class SingleTodoList(Resource):
                     'message': 'List not found',
                     'code': 404
                 }
-            
+
             todo_list = TodoList.query.get(list_id)
 
             if todo_list.users:
@@ -234,19 +235,20 @@ class SingleTodoList(Resource):
             return {
                 'message': 'Internal server error',
                 'code': 500
-            }    
+            }
+
 
 class Tasks(Resource):
     @jwt_required
     def get(self, list_id):
         try:
             username = get_jwt_identity()
-            
+
             if not User.contains_todo_list(username, list_id):
                 return {
                     'message': 'List not found',
                     'code': 404
-                }            
+                }
 
             todo_list = TodoList.query.get(list_id)
             return {
@@ -266,12 +268,12 @@ class Tasks(Resource):
                 'message': 'Internal server error',
                 'code': 500
             }
-    
+
     @jwt_required
     def post(self, list_id):
         try:
             new_task_request = request.get_json()
-            validate(schema=new_task_schema, instance=new_task_request)        
+            validate(schema=new_task_schema, instance=new_task_request)
             username = get_jwt_identity()
 
             if not User.contains_todo_list(username, list_id):
@@ -324,7 +326,6 @@ class SingleTask(Resource):
                 'code': 200
             }
 
-
         except Exception as err:
             print(err)
             return {
@@ -351,13 +352,13 @@ class SingleTask(Resource):
             return {
                 'message': 'Deleted task',
                 'code': 200
-            }        
+            }
         except Exception as err:
             print(err)
             return {
                 'message': 'Internal server error',
                 'code': 500
-            }  
+            }
 
 
 class InviteUser(Resource):
@@ -399,8 +400,7 @@ class InviteUser(Resource):
             return {
                 'message': 'Internal server error',
                 'code': 500
-            }             
-
+            }
 
 
 class SearchUser(Resource):
